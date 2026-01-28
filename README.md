@@ -15,10 +15,11 @@ swift build -c release
 cp .build/release/tap /usr/local/bin/
 ```
 
-### Homebrew (coming soon)
+### Homebrew
 
 ```bash
-brew install geneyoo/tap/onetap
+brew tap geneyoo/onetap
+brew install onetap
 ```
 
 ## Quick Start
