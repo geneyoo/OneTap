@@ -1,0 +1,36 @@
+# Xcode
+*.xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Packages/
+Package.resolved
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Carthage
+Carthage/Build/
+
+# Generated files
+DerivedData/
+*.moved-aside
+*.xcuserstate
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDEs
+*.idea/
+*.vscode/
+
+# Release artifacts
+*.zip
+*.tar.gz
