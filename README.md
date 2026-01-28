@@ -18,8 +18,7 @@ cp .build/release/tap /usr/local/bin/
 ### Homebrew
 
 ```bash
-brew tap geneyoo/onetap
-brew install onetap
+brew install geneyoo/tap/onetap
 ```
 
 ## Quick Start
