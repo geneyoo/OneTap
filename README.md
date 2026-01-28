@@ -66,6 +66,28 @@ tap claim --name "ui-tests"
 tap run --scheme MyAppUITests
 ```
 
+### Environment Variable Override
+
+For scripts and automation (where TTY isn't available), use the `ONETAP_SESSION` environment variable:
+
+```bash
+export ONETAP_SESSION="my-session"
+tap claim --auto
+tap run --scheme MyApp
+tap release
+```
+
+### Minimum Runtime Requirement
+
+When your project requires a specific iOS version:
+
+```bash
+# Claim a simulator with iOS 26.2 or later
+tap claim --auto --min-runtime 26.2
+
+# Formats accepted: "26.2", "iOS 26.2", "iOS-26-2"
+```
+
 ### Stale Claim Detection
 
 If a terminal closes without releasing its claim, OneTap detects the dead process:
@@ -103,7 +125,8 @@ tap release --shutdown
 
 ```bash
 # Non-interactive mode for automation
-tap claim --auto --name "ci-$CI_JOB_ID"
+export ONETAP_SESSION="ci-$CI_JOB_ID"
+tap claim --auto --name "ci-$CI_JOB_ID" --min-runtime 26.0
 tap run --scheme MyApp --configuration Release
 tap screenshot ./artifacts/screenshot.png
 tap release
@@ -111,21 +134,64 @@ tap release
 
 ### Claude Code Integration
 
-Add to your project's `~/.claude/hooks/PreToolCall`:
+Add to your shell profile or Claude Code hooks:
 
 ```bash
-#!/bin/bash
-# Auto-claim simulator for Claude sessions
-if [[ "$1" == "Bash" ]] && [[ "$2" == *"xcodebuild"* ]]; then
-    tap claim --auto --name "claude-$$" 2>/dev/null || true
-fi
+# Auto-claim for Claude sessions
+export ONETAP_SESSION="claude-$(date +%H%M)"
 ```
+
+Or create a custom `/run` skill that wraps `tap run`.
 
 ## Build System Support
 
 - **Xcode Workspace** (`.xcworkspace`) - Preferred for CocoaPods/SPM projects
 - **Xcode Project** (`.xcodeproj`) - Standard Xcode projects
 - **Swift Package Manager** - Detects `Package.swift` (iOS app support limited)
+
+OneTap auto-detects your project type. Use `--project` to specify explicitly:
+
+```bash
+tap run --project MyApp.xcworkspace --scheme MyApp
+```
+
+## Command Reference
+
+### `tap claim`
+
+```
+USAGE: tap claim [--name <name>] [--udid <udid>] [--auto] [--boot] [--min-runtime <version>]
+
+OPTIONS:
+  -n, --name <name>       Name for this session (e.g., 'auth-feature')
+  --udid <udid>           Specific simulator UDID to claim
+  --auto                  Auto-select an available simulator (non-interactive)
+  --boot                  Boot the simulator if not already running
+  --min-runtime <version> Minimum iOS version (e.g., '26.2')
+```
+
+### `tap run`
+
+```
+USAGE: tap run [--scheme <scheme>] [--configuration <config>] [--project <path>] [--restart/--no-restart] [--show]
+
+OPTIONS:
+  -s, --scheme <scheme>   Scheme to build
+  -c, --configuration     Build configuration (Debug/Release, default: Debug)
+  --project <path>        Path to project or workspace
+  --restart/--no-restart  Terminate existing app before launching (default: --restart)
+  --show                  Open Simulator.app and bring to front
+```
+
+### `tap logs`
+
+```
+USAGE: tap logs [--bundle-id <id>] [--all]
+
+OPTIONS:
+  -b, --bundle-id <id>    Bundle ID to filter logs (uses last installed if omitted)
+  -a, --all               Show all logs (don't filter by app)
+```
 
 ## State Storage
 
@@ -142,6 +208,29 @@ OneTap stores state in `~/.onetap/`:
 - macOS 13+
 - Xcode 15+ (for simulator tools)
 - Swift 5.9+
+
+## Troubleshooting
+
+### "No simulator claimed for this session"
+
+Each terminal needs to claim a simulator before running commands. Use `tap claim --auto` to claim one.
+
+### "Unable to find a destination matching the provided destination specifier"
+
+Your project requires a newer iOS version than the claimed simulator. Use `--min-runtime`:
+
+```bash
+tap release
+tap claim --auto --min-runtime 26.2
+```
+
+### Simulator not booting
+
+Make sure Xcode is installed and the simulator runtime is available:
+
+```bash
+xcrun simctl list devices available
+```
 
 ## License
 

@@ -16,7 +16,7 @@ struct RunCommand: AsyncParsableCommand {
     @Option(name: .long, help: "Path to project or workspace")
     var project: String?
 
-    @Flag(name: .long, help: "Terminate existing app instance before launching")
+    @Flag(name: .long, inversion: .prefixedNo, help: "Terminate existing app instance before launching")
     var restart: Bool = true
 
     @Flag(name: .long, help: "Open Simulator.app and bring to front")

@@ -101,7 +101,7 @@ struct BuildManager {
                 "-workspace", url.path,
                 "-scheme", scheme ?? "",
                 "-configuration", configuration,
-                "-destination", "id=\(simulatorUDID)",
+                "-destination", "platform=iOS Simulator,id=\(simulatorUDID)",
                 "-derivedDataPath", derivedData.path,
                 "build"
             ]
@@ -111,7 +111,7 @@ struct BuildManager {
                 "-project", url.path,
                 "-scheme", scheme ?? "",
                 "-configuration", configuration,
-                "-destination", "id=\(simulatorUDID)",
+                "-destination", "platform=iOS Simulator,id=\(simulatorUDID)",
                 "-derivedDataPath", derivedData.path,
                 "build"
             ]

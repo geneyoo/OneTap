@@ -3,9 +3,15 @@ import Foundation
 /// Identifies the current terminal session
 enum SessionIdentifier {
     /// Get a unique identifier for the current session
-    /// Uses TTY path as primary identifier, falls back to PID-based ID
+    /// Priority: ONETAP_SESSION env var > TTY path > PID-based ID
     static func current() -> String {
-        // Try to get TTY path first (most reliable for terminal sessions)
+        // Check for explicit session override (for programmatic use)
+        if let envSession = ProcessInfo.processInfo.environment["ONETAP_SESSION"],
+           !envSession.isEmpty {
+            return "env-\(envSession)"
+        }
+
+        // Try to get TTY path (most reliable for terminal sessions)
         if let tty = ttyPath() {
             return tty
         }
@@ -22,6 +28,16 @@ enum SessionIdentifier {
     /// Get the parent process ID (usually the shell)
     static var parentProcessId: Int32 {
         getppid()
+    }
+
+    /// Get the process ID to use for session tracking
+    /// For TTY-based sessions, use the parent (shell) PID since each command is a new process
+    /// For non-TTY sessions, use the current PID
+    static var sessionProcessId: Int32 {
+        if ttyPath() != nil {
+            return getppid()
+        }
+        return getpid()
     }
 
     /// Get the TTY path for current session

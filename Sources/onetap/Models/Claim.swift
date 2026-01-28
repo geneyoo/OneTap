@@ -32,9 +32,24 @@ struct Claim: Codable, Identifiable {
     }
 
     /// Check if the owning process is still running
+    /// For TTY-based sessions, checks if the shell process is alive
+    /// For PID-based sessions (non-TTY), assumes alive if session is recent (<24h)
     var isProcessAlive: Bool {
-        // kill with signal 0 checks if process exists without sending signal
-        kill(processId, 0) == 0
+        // For TTY-based sessions, check if shell is still running
+        if sessionId.hasPrefix("/dev/") {
+            return kill(processId, 0) == 0
+        }
+
+        // For PID-based sessions (non-TTY), check process OR assume alive if recent
+        // This handles programmatic use cases (hooks, scripts) where each command is a new process
+        if kill(processId, 0) == 0 {
+            return true
+        }
+
+        // If process is dead but session is recent (< 24 hours), consider it alive
+        // This allows non-TTY sessions to persist across commands
+        let ageInHours = Date().timeIntervalSince(lastActivityAt) / 3600
+        return ageInHours < 24
     }
 
     /// Display name for status output

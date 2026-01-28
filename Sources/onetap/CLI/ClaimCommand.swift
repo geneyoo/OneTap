@@ -19,9 +19,12 @@ struct ClaimCommand: AsyncParsableCommand {
     @Flag(name: .long, help: "Boot the simulator if not already running")
     var boot: Bool = false
 
+    @Option(name: .long, help: "Minimum iOS version (e.g., '26.2' or 'iOS-26-2')")
+    var minRuntime: String?
+
     mutating func run() async throws {
         let sessionId = SessionIdentifier.current()
-        let processId = SessionIdentifier.processId
+        let processId = SessionIdentifier.sessionProcessId
 
         // Check if we already have a claim
         let existingClaim = try await StateManager.shared.currentClaim()
@@ -53,10 +56,19 @@ struct ClaimCommand: AsyncParsableCommand {
             }
             selectedSimulator = sim
         } else if auto {
-            // Auto-select
-            selectedSimulator = InteractivePicker.autoSelect(from: simulators, excludeUDIDs: claimedUDIDs)
+            // Auto-select with optional runtime filter
+            let normalizedRuntime = normalizeRuntime(minRuntime)
+            selectedSimulator = InteractivePicker.autoSelect(
+                from: simulators,
+                excludeUDIDs: claimedUDIDs,
+                minimumRuntime: normalizedRuntime
+            )
             if selectedSimulator == nil {
-                print("❌ No available simulators to claim")
+                if let runtime = minRuntime {
+                    print("❌ No available simulators with iOS >= \(runtime)")
+                } else {
+                    print("❌ No available simulators to claim")
+                }
                 return
             }
         } else {
@@ -96,5 +108,32 @@ struct ClaimCommand: AsyncParsableCommand {
             try await SimulatorManager.openSimulatorApp(udid: simulator.udid)
             print("✅ Simulator booted")
         }
+    }
+
+    /// Normalize runtime string to identifier format
+    /// "26.2" -> "iOS-26-2"
+    /// "iOS 26.2" -> "iOS-26-2"
+    private func normalizeRuntime(_ runtime: String?) -> String? {
+        guard let runtime = runtime else { return nil }
+
+        // Already in correct format
+        if runtime.hasPrefix("iOS-") {
+            return runtime
+        }
+
+        // Convert "26.2" or "iOS 26.2" to "iOS-26-2"
+        let cleaned = runtime
+            .replacingOccurrences(of: "iOS ", with: "")
+            .replacingOccurrences(of: "iOS", with: "")
+            .trimmingCharacters(in: .whitespaces)
+
+        let parts = cleaned.split(separator: ".")
+        if parts.count >= 2 {
+            return "iOS-\(parts[0])-\(parts[1])"
+        } else if parts.count == 1 {
+            return "iOS-\(parts[0])-0"
+        }
+
+        return runtime
     }
 }
